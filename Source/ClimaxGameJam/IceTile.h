@@ -24,5 +24,17 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TObjectPtr<UMaterial> NoCrackMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TObjectPtr<UMaterial> SmallCrackMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TObjectPtr<UMaterial> MediumCrackMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TObjectPtr<UMaterial> BigCrackMaterial;
 		
 };

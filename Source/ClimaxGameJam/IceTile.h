@@ -26,15 +26,6 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TObjectPtr<UMaterial> NoCrackMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TObjectPtr<UMaterial> SmallCrackMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TObjectPtr<UMaterial> MediumCrackMaterial;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TObjectPtr<UMaterial> BigCrackMaterial;
+		bool IsLivingBlock = true;
 		
 };

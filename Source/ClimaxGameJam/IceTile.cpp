@@ -20,8 +20,9 @@ void UIceTile::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 
 void UIceTile::KillIceBlock()
 {
-	for (UMeshComponent* Mesh : MeshComponents)
+	if (MeshComponent != nullptr)
 	{
-		//Mesh->
+		MeshComponent->SetVisibility(false, true);
+		MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }

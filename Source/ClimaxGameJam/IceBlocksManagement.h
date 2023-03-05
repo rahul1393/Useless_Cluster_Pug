@@ -9,6 +9,7 @@
 
 #include "IceBlocksManagement.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVictoryCheckCompleted, bool, IsVictory);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CLIMAXGAMEJAM_API UIceBlocksManagement : public UActorComponent
@@ -29,13 +30,16 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable)
-		bool IsVictory(FVector IceBlockLocation);
+		void TriggerVictoryCheck(FVector IceBlockLocation);
 
-	bool CheckIfIceBlockIsALive(UIceTile* FoundTile);
-
+	bool CheckIfIceBlockIsALive(UIceTile** FoundTile);
+	bool RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<FVector, UIceTile*> IceBlocksMap;
+
+	UPROPERTY(BlueprintAssignable)
+		FOnVictoryCheckCompleted OnVictoryCheckCompleted;
 		
 };

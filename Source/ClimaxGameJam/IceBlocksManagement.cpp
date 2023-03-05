@@ -32,19 +32,78 @@ void UIceBlocksManagement::TickComponent(float DeltaTime, ELevelTick TickType, F
 	// ...
 }
 
-bool UIceBlocksManagement::IsVictory(FVector IceBlockLocation)
+void UIceBlocksManagement::TriggerVictoryCheck(FVector IceBlockLocation)
+{
+	TArray<bool> NeighbourBlocksAreAlive;
+	TArray<UIceTile**> Neighbours;
+
+	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X - 100, IceBlockLocation.Y, IceBlockLocation.Z)));
+	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X + 100, IceBlockLocation.Y, IceBlockLocation.Z)));
+	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y - 100, IceBlockLocation.Z)));
+	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y + 100, IceBlockLocation.Z)));
+
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[0]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[1]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[2]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[3]));
+
+	bool IsVictory = false;
+	int CountingDeadNeighbours = 0;
+
+	for (size_t i = 0; i < Neighbours.Num() ; i++)
+	{
+		if (!NeighbourBlocksAreAlive[i] )
+		{
+			CountingDeadNeighbours++;
+		}
+	}
+
+	if (CountingDeadNeighbours > 1)
+	{
+		for (size_t i = 0; i < Neighbours.Num(); i++)
+		{
+			if (!NeighbourBlocksAreAlive[i])
+			{
+				// TODO if one of them is the edge piece...?? mark the final as the edge piece
+				//AActor* Some = (*Neighbours[i])->GetOwner();
+				//RecursiveLookForAPathCircle(, IceBlockLocation, IceBlockLocation);
+			}
+		}
+	}
+
+	// TODO potential for Async
+	OnVictoryCheckCompleted.Broadcast(IsVictory);
+
+}
+
+bool UIceBlocksManagement::CheckIfIceBlockIsALive(UIceTile** FoundTile)
+{
+	bool BoolToAdd = true;
+
+	if (FoundTile == nullptr)
+	{
+		BoolToAdd = false;
+	}
+	else
+	{
+		BoolToAdd = (*FoundTile)->IsLivingBlock;
+	}
+	return BoolToAdd;
+}
+
+bool UIceBlocksManagement::RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile)
 {
 	TArray<bool> NeighbourBlocksAreAlive;
 
-	UIceTile** FoundTile1 = IceBlocksMap.Find(FVector(IceBlockLocation.X - 100, IceBlockLocation.Y, IceBlockLocation.Z));
-	UIceTile** FoundTile2 = IceBlocksMap.Find(FVector(IceBlockLocation.X + 100, IceBlockLocation.Y, IceBlockLocation.Z));
-	UIceTile** FoundTile3 = IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y - 100, IceBlockLocation.Z));
-	UIceTile** FoundTile4 = IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y + 100, IceBlockLocation.Z));
+	UIceTile** FoundTile1 = IceBlocksMap.Find(FVector(ChosenTile.X - 100, ChosenTile.Y, ChosenTile.Z));
+	UIceTile** FoundTile2 = IceBlocksMap.Find(FVector(ChosenTile.X + 100, ChosenTile.Y, ChosenTile.Z));
+	UIceTile** FoundTile3 = IceBlocksMap.Find(FVector(ChosenTile.X, ChosenTile.Y - 100, ChosenTile.Z));
+	UIceTile** FoundTile4 = IceBlocksMap.Find(FVector(ChosenTile.X, ChosenTile.Y + 100, ChosenTile.Z));
 
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(*FoundTile1));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(*FoundTile2));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(*FoundTile3));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(*FoundTile4));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile1));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile2));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile3));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile4));
 
 	int CounterOfLivingNeighbours = 0;
 
@@ -62,22 +121,5 @@ bool UIceBlocksManagement::IsVictory(FVector IceBlockLocation)
 		return false;
 	}
 
-
-
 	return false;
-}
-
-bool UIceBlocksManagement::CheckIfIceBlockIsALive(UIceTile* FoundTile)
-{
-	bool BoolToAdd = true;
-
-	if (FoundTile == nullptr)
-	{
-		BoolToAdd = false;
-	}
-	else
-	{
-		BoolToAdd = FoundTile->IsLivingBlock;
-	}
-	return BoolToAdd;
 }

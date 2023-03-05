@@ -25,7 +25,18 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
+	UFUNCTION(BlueprintCallable)
+		void KillIceBlock();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<UMeshComponent*> MeshComponents;
+
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool IsLivingBlock = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool IsBearBlock = false;
 		
 };

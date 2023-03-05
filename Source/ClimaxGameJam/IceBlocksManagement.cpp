@@ -25,11 +25,17 @@ void UIceBlocksManagement::TriggerVictoryCheck(FVector IceBlockLocation)
 {
 	TArray<bool> NeighbourBlocksAreAlive;
 	TArray<UIceTile**> Neighbours;
+	TArray<FVector> NeighboursCoordinates;
 
-	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X - 100, IceBlockLocation.Y, IceBlockLocation.Z)));
-	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X + 100, IceBlockLocation.Y, IceBlockLocation.Z)));
-	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y - 100, IceBlockLocation.Z)));
-	Neighbours.Add(IceBlocksMap.Find(FVector(IceBlockLocation.X, IceBlockLocation.Y + 100, IceBlockLocation.Z)));
+	NeighboursCoordinates.Add(FVector(IceBlockLocation.X, IceBlockLocation.Y + 100, IceBlockLocation.Z));
+	NeighboursCoordinates.Add(FVector(IceBlockLocation.X, IceBlockLocation.Y - 100, IceBlockLocation.Z));
+	NeighboursCoordinates.Add(FVector(IceBlockLocation.X + 100, IceBlockLocation.Y, IceBlockLocation.Z));
+	NeighboursCoordinates.Add(FVector(IceBlockLocation.X - 100, IceBlockLocation.Y, IceBlockLocation.Z));
+
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[0]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[1]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[2]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[3]));
 
 	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[0]));
 	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[1]));
@@ -49,18 +55,32 @@ void UIceBlocksManagement::TriggerVictoryCheck(FVector IceBlockLocation)
 
 	if (CountingDeadNeighbours > 1)
 	{
+		bool FoundCircle = false;
+		bool IsCircleFound = false;
+		FVector MaxCoordinates = IceBlockLocation;
+		FVector MinCoordinates = IceBlockLocation;
+
+		// TODO potential for Async maybe?
 		for (size_t i = 0; i < Neighbours.Num(); i++)
 		{
 			if (!NeighbourBlocksAreAlive[i])
 			{
-				// TODO if one of them is the edge piece...?? mark the final as the edge piece
-				//AActor* Some = (*Neighbours[i])->GetOwner();
-				//RecursiveLookForAPathCircle(, IceBlockLocation, IceBlockLocation);
+				FoundCircle = RecursiveLookForAPathCircle(NeighboursCoordinates[i], IceBlockLocation, IceBlockLocation, MaxCoordinates, MinCoordinates, IsCircleFound);
+				CountingDeadNeighbours--;
+
+				if (FoundCircle)
+				{
+					IsVictory = ClearTheCentralPieces(MaxCoordinates, MinCoordinates);
+					break;
+				}
+				else if (CountingDeadNeighbours < 2)
+				{
+					break;
+				}
 			}
 		}
 	}
 
-	// TODO potential for Async
 	OnVictoryCheckCompleted.Broadcast(IsVictory);
 
 }
@@ -71,7 +91,7 @@ bool UIceBlocksManagement::CheckIfIceBlockIsALive(UIceTile** FoundTile)
 
 	if (FoundTile == nullptr)
 	{
-		BoolToAdd = true;
+		BoolToAdd = true; // edges and pools inside of the grid are not counted as gaps
 	}
 	else
 	{
@@ -80,35 +100,104 @@ bool UIceBlocksManagement::CheckIfIceBlockIsALive(UIceTile** FoundTile)
 	return BoolToAdd;
 }
 
-bool UIceBlocksManagement::RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile)
+bool UIceBlocksManagement::RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile, FVector& MaxCoordinate, FVector& MinCoordinate, bool& IsCircleFound)
 {
-	TArray<bool> NeighbourBlocksAreAlive;
-
-	UIceTile** FoundTile1 = IceBlocksMap.Find(FVector(ChosenTile.X - 100, ChosenTile.Y, ChosenTile.Z));
-	UIceTile** FoundTile2 = IceBlocksMap.Find(FVector(ChosenTile.X + 100, ChosenTile.Y, ChosenTile.Z));
-	UIceTile** FoundTile3 = IceBlocksMap.Find(FVector(ChosenTile.X, ChosenTile.Y - 100, ChosenTile.Z));
-	UIceTile** FoundTile4 = IceBlocksMap.Find(FVector(ChosenTile.X, ChosenTile.Y + 100, ChosenTile.Z));
-
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile1));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile2));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile3));
-	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(FoundTile4));
-
-	int CounterOfLivingNeighbours = 0;
-
-	for (bool IsLivingNeighbour : NeighbourBlocksAreAlive)
+	if (IsCircleFound)
 	{
-		if (IsLivingNeighbour)
+		return true;
+	}
+
+	TArray<bool> NeighbourBlocksAreAlive;
+	TArray<UIceTile**> Neighbours;
+	TArray<FVector> NeighboursCoordinates;
+
+	NeighboursCoordinates.Add(FVector(ChosenTile.X, ChosenTile.Y + 100, ChosenTile.Z));
+	NeighboursCoordinates.Add(FVector(ChosenTile.X, ChosenTile.Y - 100, ChosenTile.Z));
+	NeighboursCoordinates.Add(FVector(ChosenTile.X + 100, ChosenTile.Y, ChosenTile.Z));
+	NeighboursCoordinates.Add(FVector(ChosenTile.X - 100, ChosenTile.Y, ChosenTile.Z));
+
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[0]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[1]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[2]));
+	Neighbours.Add(IceBlocksMap.Find(NeighboursCoordinates[3]));
+
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[0]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[1]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[2]));
+	NeighbourBlocksAreAlive.Add(CheckIfIceBlockIsALive(Neighbours[3]));
+
+	bool FoundCircle = false;
+	int CountingDeadNeighbours = 0;
+
+	for (size_t i = 0; i < Neighbours.Num(); i++)
+	{
+		if (!NeighbourBlocksAreAlive[i])
 		{
-			CounterOfLivingNeighbours++;
+			CountingDeadNeighbours++;
 		}
 	}
 
-	// less than 2 means there is no path to take
-	if (CounterOfLivingNeighbours < 2)
+	if (CountingDeadNeighbours > 1)
 	{
-		return false;
+		// TODO potential for Async maybe?
+		for (size_t i = 0; i < Neighbours.Num(); i++)
+		{
+			if (!NeighbourBlocksAreAlive[i] && NeighboursCoordinates[i] != PreviousTile)
+			{
+				if (NeighboursCoordinates[i] == FinalTile)
+				{
+					IsCircleFound = true;
+					return true;
+				}
+				else
+				{
+					// X coordinates check
+					if (ChosenTile.X > MaxCoordinate.X)
+					{
+						MaxCoordinate.X = ChosenTile.X;
+					}
+					else if (ChosenTile.X < MinCoordinate.X)
+					{
+						MinCoordinate.X = ChosenTile.X;
+					}
+
+					// Y coordinates check
+					if (ChosenTile.Y > MaxCoordinate.Y)
+					{
+						MaxCoordinate.Y = ChosenTile.Y;
+					}
+					else if (ChosenTile.Y < MinCoordinate.Y)
+					{
+						MinCoordinate.Y = ChosenTile.Y;
+					}
+
+					FoundCircle = RecursiveLookForAPathCircle(NeighboursCoordinates[i], ChosenTile, FinalTile, MaxCoordinate, MinCoordinate, IsCircleFound);
+				}
+			}
+		}
 	}
 
-	return false;
+	return FoundCircle;
+}
+
+bool UIceBlocksManagement::ClearTheCentralPieces(FVector MaxCoordinate, FVector MinCoordinate)
+{
+	bool FoundTheBear = false;
+
+	for (size_t i = MinCoordinate.X; i < MaxCoordinate.X; i = i + 100)
+	{
+		for (size_t j = MinCoordinate.Y; j < MaxCoordinate.Y; j = j + 100)
+		{
+			UIceTile** FoundTile = IceBlocksMap.Find(FVector(i, j, MaxCoordinate.Z));
+			if (FoundTile != nullptr)
+			{
+				if ((*FoundTile)->IsLivingBlock)
+				{
+					FoundTheBear = (*FoundTile)->IsBearBlock;
+					(*FoundTile)->KillIceBlock();
+				}
+			}
+		}
+	}
+	return FoundTheBear;
 }

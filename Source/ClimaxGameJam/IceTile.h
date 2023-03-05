@@ -30,7 +30,7 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<UMeshComponent*> MeshComponents;
+		UStaticMeshComponent* MeshComponent;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

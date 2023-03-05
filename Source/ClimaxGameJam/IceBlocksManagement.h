@@ -33,7 +33,8 @@ public:
 		void TriggerVictoryCheck(FVector IceBlockLocation);
 
 	bool CheckIfIceBlockIsALive(UIceTile** FoundTile);
-	bool RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile);
+	bool RecursiveLookForAPathCircle(FVector ChosenTile, FVector PreviousTile, FVector FinalTile, FVector& MaxCoordinate, FVector& MinCoordinate, bool& IsCircleFound); // returns true if it found a circle
+	bool ClearTheCentralPieces(FVector MaxCoordinate, FVector MinCoordinate); // returns true if it found  the bear tiles
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
